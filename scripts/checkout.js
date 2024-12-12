@@ -1,14 +1,15 @@
-import { cart, removeFromCart } from "../data/cart.js";
+import { calculateCartQuantity, cart, removeFromCart, updateQuantity } from "../data/cart.js";
 import { products } from "../data/products.js";
 import { formatCurrency } from "./utils/money.js";
 
+
+updateCartQuantity()
 
 let cartItemHTML = ""
 
 cart.forEach(cartItem => {
 
     const productId = cartItem.productId;
-
 
     const matchingProduct = products.find(product => product.id === productId);
 
@@ -31,11 +32,19 @@ cart.forEach(cartItem => {
             </div>
             <div class="product-quantity">
                 <span>
-                Quantity: <span class="quantity-label">${cartItem.quantity}</span>
+                Quantity: <span class="quantity-label js-quantity-label-${matchingProduct.id}">${cartItem.quantity}</span>
                 </span>
-                <span class="update-quantity-link link-primary">
+
+                <span class="update-quantity-link link-primary js-update-quantity"
+                data-product-id="${matchingProduct.id}"
+                >
                 Update
                 </span>
+
+                <input class="quantity-input js-quantity-input-${matchingProduct.id} js-quantity-input" data-product-id="${matchingProduct.id}"> 
+
+                <span class="save-quantity-link link-primary js-save-quantity-link" data-product-id="${matchingProduct.id}">Save</span>
+                
                 <span class="delete-quantity-link link-primary js-delete-quantity-link"
                 data-product-id="${matchingProduct.id}"
                 >
@@ -51,7 +60,7 @@ cart.forEach(cartItem => {
             <div class="delivery-option">
                 <input type="radio" checked
                 class="delivery-option-input"
-                name="delivery-option-1">
+                name="delivery-option-${matchingProduct.id}">
                 <div>
                 <div class="delivery-option-date">
                     Tuesday, June 21
@@ -64,7 +73,7 @@ cart.forEach(cartItem => {
             <div class="delivery-option">
                 <input type="radio"
                 class="delivery-option-input"
-                name="delivery-option-1">
+                name="delivery-option-${matchingProduct.id}">
                 <div>
                 <div class="delivery-option-date">
                     Wednesday, June 15
@@ -77,7 +86,7 @@ cart.forEach(cartItem => {
             <div class="delivery-option">
                 <input type="radio"
                 class="delivery-option-input"
-                name="delivery-option-1">
+                name="delivery-option-${matchingProduct.id}">
                 <div>
                 <div class="delivery-option-date">
                     Monday, June 13
@@ -105,4 +114,72 @@ document.querySelectorAll('.js-delete-quantity-link')
 
         document.querySelector(`.js-cart-item-container-${productId}`)
             .remove()
+
+        updateCartQuantity()
     }))
+
+document.querySelectorAll('.js-update-quantity')
+    .forEach((updateLink) => {
+        updateLink.addEventListener('click', () => {
+            const { productId } = updateLink.dataset
+
+            document.querySelector(`.js-cart-item-container-${productId}`).classList.add('is-editing-quantity')
+        })
+    })
+
+
+document.querySelectorAll('.js-save-quantity-link')
+    .forEach((saveLink) => {
+        saveLink.addEventListener('click', () => {
+            const { productId } = saveLink.dataset
+
+            updateNewCartQuantity(productId)
+        })
+    })
+
+document.querySelectorAll('.js-quantity-input')
+    .forEach(input => {
+        input.addEventListener('keydown', (event) => {
+            const { productId } = input.dataset
+
+            const matchingProduct = cart.find(cartItem => cartItem.productId === productId);
+
+            if (matchingProduct) {
+                if (event.key === 'Enter') {
+
+                    updateNewCartQuantity(productId)
+                }
+
+            }
+        })
+    })
+
+function updateCartQuantity() {
+    const cartQuantity = calculateCartQuantity()
+
+    document.querySelector('.js-return-to-home-link')
+        .innerHTML = `${cartQuantity} items`
+}
+
+function updateNewCartQuantity(productId) {
+    const quantityInput = document.querySelector(`.js-quantity-input-${productId}`)
+    const newQuantity = Number(quantityInput.value)
+
+    const MIN_QUANTITY = 0;
+    const MAX_QUANTITY = 1000;
+
+    if (newQuantity < MIN_QUANTITY || newQuantity >= MAX_QUANTITY) {
+        alert('Quantity must be at least 0 and less than 1000');
+        return;
+    }
+
+    updateQuantity(productId, newQuantity)
+
+    const container = document.querySelector(`.js-cart-item-container-${productId}`)
+    container.classList.remove('is-editing-quantity')
+
+    const quantityLabel = document.querySelector(`.js-quantity-label-${productId}`)
+    quantityLabel.innerHTML = newQuantity;
+
+    updateCartQuantity()
+}

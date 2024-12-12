@@ -12,6 +12,7 @@ export const products = [
   {
     id: 'id2',
     image: 'images/products/umbrella.jpg',
+    name: 'Umbrella',
     rating: {
       stars: 4,
       count: 42
